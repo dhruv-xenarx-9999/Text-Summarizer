@@ -8,6 +8,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
+from dotenv import load_dotenv
 
 
 app = FastAPI(
@@ -18,6 +19,7 @@ app = FastAPI(
 
 BASE_DIR = Path(__file__).resolve().parent
 MODEL_DIR = BASE_DIR / "saved_summary_model"
+load_dotenv(BASE_DIR.parent / ".env")
 templates = Jinja2Templates(directory=str(BASE_DIR))
 
 
