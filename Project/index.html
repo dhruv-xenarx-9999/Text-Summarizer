@@ -113,7 +113,10 @@
                 });
         
                 if (!response.ok) {
-                    throw new Error(`Server error: ${response.status}`);
+                    const errorData = await response.json().catch(() => null);
+                    throw new Error(
+                        errorData?.detail || `Server error: ${response.status}`
+                    );
                 }
         
                 const data = await response.json();

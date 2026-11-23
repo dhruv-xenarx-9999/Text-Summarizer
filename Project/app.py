@@ -87,10 +87,19 @@ async def summarize_with_huggingface(dialogue: str) -> str:
             )
             response.raise_for_status()
             payload = response.json()
-    except httpx.HTTPError as exc:
+    except httpx.HTTPStatusError as exc:
+        if exc.response.status_code in (401, 403):
+            raise RuntimeError(
+                "Hugging Face rejected the inference request. Configure "
+                "HF_API_TOKEN with permission to call Inference Providers."
+            ) from exc
         raise RuntimeError(
-            f"Hugging Face inference request failed: {exc}"
+            f"Hugging Face inference returned HTTP {exc.response.status_code}."
         ) from exc
+    except httpx.TimeoutException as exc:
+        raise RuntimeError("Hugging Face inference request timed out.") from exc
+    except httpx.RequestError as exc:
+        raise RuntimeError("Could not reach the Hugging Face inference endpoint.") from exc
 
     if isinstance(payload, list) and payload:
         summary = payload[0].get("summary_text") or payload[0].get("generated_text")
