@@ -20,6 +20,7 @@ app = FastAPI(
 BASE_DIR = Path(__file__).resolve().parent
 MODEL_DIR = BASE_DIR / "saved_summary_model"
 load_dotenv(BASE_DIR.parent / ".env")
+DEFAULT_HF_MODEL_ID = "xenarx/text-summarizer-t5"
 templates = Jinja2Templates(directory=str(BASE_DIR))
 
 
@@ -60,12 +61,7 @@ def load_local_model():
 
 async def summarize_with_huggingface(dialogue: str) -> str:
     api_url = os.getenv("HF_INFERENCE_API_URL")
-    model_id = os.getenv("HF_MODEL_ID")
-
-    if not api_url and not model_id:
-        raise RuntimeError(
-            "Set HF_INFERENCE_API_URL or HF_MODEL_ID to enable summarization."
-        )
+    model_id = os.getenv("HF_MODEL_ID") or DEFAULT_HF_MODEL_ID
 
     if not api_url:
         api_url = f"https://router.huggingface.co/hf-inference/models/{model_id}"
@@ -113,14 +109,12 @@ async def summarize_dialogue(dialogue: str) -> str:
     if not dialogue:
         raise HTTPException(status_code=400, detail="Dialogue cannot be empty.")
 
-    if os.getenv("HF_INFERENCE_API_URL") or os.getenv("HF_MODEL_ID"):
+    if (
+        os.getenv("HF_INFERENCE_API_URL")
+        or os.getenv("HF_MODEL_ID")
+        or not MODEL_DIR.exists()
+    ):
         return await summarize_with_huggingface(dialogue)
-
-    if not MODEL_DIR.exists():
-        raise HTTPException(
-            status_code=503,
-            detail="No local model found. Configure HF_INFERENCE_API_URL or HF_MODEL_ID.",
-        )
 
     import torch
 
